@@ -1,0 +1,37 @@
+name: Security - Snyk (Python)
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 8 * * 1"  # lunes 08:00 UTC
+
+jobs:
+  snyk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (if any)
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Setup Snyk
+        uses: snyk/actions/setup@master
+
+      - name: Snyk Open Source (Python)
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: >
+            --file=requirements.txt
+            --severity-threshold=low
+            --policy-path=.snyk
+            --all-projects
+        continue-on-error: true  # no bloquea el pipeline

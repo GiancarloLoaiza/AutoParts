@@ -1,0 +1,31 @@
+name: Security - npm audit (conditional)
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 9 * * 1"
+
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for package.json
+        id: hasnode
+        run: |
+          if [ -f package.json ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Setup Node
+        if: steps.hasnode.outputs.found == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: npm install && audit
+        if: steps.hasnode.outputs.found == 'true'
+        run: |
+          npm ci || npm i
+          npm audit --audit-level=low || true
